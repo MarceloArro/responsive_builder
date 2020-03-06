@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 typedef WidgetBuilder = Widget Function(BuildContext);
 
-enum DeviceScreenType { Mobile, Tablet, Desktop, Watch }
+enum DeviceScreenType { Watch, SmallMobile, Mobile, Tablet, Desktop }
 
 /// Contains sizing information to make responsive choices for the current screen
 class SizingInformation {
@@ -13,13 +13,15 @@ class SizingInformation {
   final Size screenSize;
   final Size localWidgetSize;
 
+  bool get isWatch => deviceScreenType == DeviceScreenType.Watch;
+
+  bool get isSmallMobile => deviceScreenType == DeviceScreenType.SmallMobile;
+
   bool get isMobile => deviceScreenType == DeviceScreenType.Mobile;
 
   bool get isTablet => deviceScreenType == DeviceScreenType.Tablet;
 
   bool get isDesktop => deviceScreenType == DeviceScreenType.Desktop;
-
-  bool get isWatch => deviceScreenType == DeviceScreenType.Watch;
 
   SizingInformation({
     this.deviceScreenType,
@@ -41,11 +43,7 @@ class ScreenBreakpoints {
   final double tablet;
   final double desktop;
 
-  ScreenBreakpoints({
-    @required this.desktop,
-    @required this.tablet,
-    @required this.watch
-  });
+  ScreenBreakpoints({@required this.desktop, @required this.tablet, @required this.watch});
 
   @override
   String toString() {
@@ -57,6 +55,7 @@ class ScreenBreakpoints {
 ///
 /// This widget is used by the ScreenTypeLayout to provide different widget builders
 class ResponsiveBuilder extends StatelessWidget {
+  final bool resizeMargins;
   final Widget Function(
     BuildContext context,
     SizingInformation sizingInformation,
@@ -64,24 +63,70 @@ class ResponsiveBuilder extends StatelessWidget {
 
   final ScreenBreakpoints breakpoints;
 
-  const ResponsiveBuilder({
-    Key key,
-    this.builder,
-    this.breakpoints
-  }) : super(key: key);
+  const ResponsiveBuilder({Key key, this.builder, this.breakpoints, this.resizeMargins})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, boxConstraints) {
       var mediaQuery = MediaQuery.of(context);
       var sizingInformation = SizingInformation(
-        deviceScreenType: _getDeviceType(mediaQuery, breakpoints),
-        screenSize: mediaQuery.size,
-        localWidgetSize:
-            Size(boxConstraints.maxWidth, boxConstraints.maxHeight),
-      );
+          deviceScreenType: _getDeviceType(mediaQuery, breakpoints),
+          screenSize: mediaQuery.size,
+          localWidgetSize: Size(boxConstraints.maxWidth, boxConstraints.maxHeight));
+      SizingConfig().init(
+          wight: sizingInformation.screenSize.width, height: sizingInformation.screenSize.height);
+      if (resizeMargins) {
+        SizingConfig().resizeMargins(deviceScreenType: sizingInformation.deviceScreenType);
+      }
       return builder(context, sizingInformation);
     });
+  }
+}
+
+//Class that get the sizes of the screen and help to make a query
+// with mobile default size
+class SizingConfig {
+  static double screenWidth = 360;
+  static double screenHeight = 720;
+  static double blockSizeHorizontal = 3.6;
+  static double blockSizeVertical = 7.2;
+  static double edgeMarginLayout = 16;
+  static double marginBetweenComponents = 8;
+
+  void init({@required double wight, @required double height}) {
+    screenHeight = height;
+    screenWidth = wight;
+    blockSizeHorizontal = screenWidth / 100;
+    blockSizeVertical = screenHeight / 100;
+  }
+
+  void resizeMargins({@required DeviceScreenType deviceScreenType}) {
+    if (deviceScreenType == DeviceScreenType.SmallMobile) {
+      edgeMarginLayout = 8;
+      marginBetweenComponents = 4;
+      return;
+    }
+
+    if (deviceScreenType == DeviceScreenType.Tablet) {
+      edgeMarginLayout = 24;
+      marginBetweenComponents = 16;
+      return;
+    }
+
+    if (deviceScreenType == DeviceScreenType.Desktop) {
+      edgeMarginLayout = 32;
+      marginBetweenComponents = 24;
+      return;
+    }
+    if (deviceScreenType == DeviceScreenType.Watch) {
+      edgeMarginLayout = 4;
+      marginBetweenComponents = 4;
+      return;
+    }
+    edgeMarginLayout = 16;
+    marginBetweenComponents = 8;
+    return;
   }
 }
 
@@ -94,24 +139,35 @@ class ResponsiveBuilder extends StatelessWidget {
 /// [tablet] will be built when width is greater than 600
 /// [desktop] will be built if width is greater than 950
 class ScreenTypeLayout extends StatelessWidget {
-  
+  final bool resizeMargins;
   final ScreenBreakpoints breakpoints;
-  
   final WidgetBuilder watch;
   final WidgetBuilder mobile;
   final WidgetBuilder tablet;
   final WidgetBuilder desktop;
 
   ScreenTypeLayout(
-      {Key key, this.breakpoints, Widget watch, Widget mobile, Widget tablet, Widget desktop}) :
-      this.watch = _builderOrNull(watch),
-      this.mobile = _builderOrNull(mobile),
-      this.tablet = _builderOrNull(tablet),
-      this.desktop = _builderOrNull(desktop),
-      super(key: key);
+      {Key key,
+      this.breakpoints,
+      Widget watch,
+      Widget mobile,
+      Widget tablet,
+      Widget desktop,
+      this.resizeMargins})
+      : this.watch = _builderOrNull(watch),
+        this.mobile = _builderOrNull(mobile),
+        this.tablet = _builderOrNull(tablet),
+        this.desktop = _builderOrNull(desktop),
+        super(key: key);
 
   const ScreenTypeLayout.builder(
-      {Key key, this.breakpoints, this.watch, this.mobile, this.tablet, this.desktop})
+      {Key key,
+      this.breakpoints,
+      this.watch,
+      this.mobile,
+      this.tablet,
+      this.desktop,
+      this.resizeMargins})
       : super(key: key);
 
   static WidgetBuilder _builderOrNull(Widget widget) {
@@ -122,6 +178,7 @@ class ScreenTypeLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return ResponsiveBuilder(
       breakpoints: breakpoints,
+      resizeMargins: resizeMargins,
       builder: (context, sizingInformation) {
         // If we're at desktop size
         if (sizingInformation.deviceScreenType == DeviceScreenType.Desktop) {
@@ -134,9 +191,7 @@ class ScreenTypeLayout extends StatelessWidget {
         if (sizingInformation.deviceScreenType == DeviceScreenType.Tablet) {
           if (tablet != null) return tablet(context);
         }
-
-        if (sizingInformation.deviceScreenType == DeviceScreenType.Watch &&
-            watch != null) {
+        if (sizingInformation.deviceScreenType == DeviceScreenType.Watch && watch != null) {
           return watch(context);
         }
 
@@ -181,17 +236,17 @@ DeviceScreenType _getDeviceType(MediaQueryData mediaQuery, ScreenBreakpoints bre
     deviceWidth = mediaQuery.size.width;
   }
 
-  // Replaces the defaults with the user defined definitions 
-  if(breakpoint != null) {
-    if(deviceWidth > breakpoint.desktop) {
+  // Replaces the defaults with the user defined definitions
+  if (breakpoint != null) {
+    if (deviceWidth > breakpoint.desktop) {
       return DeviceScreenType.Desktop;
     }
 
-    if(deviceWidth > breakpoint.tablet) {
+    if (deviceWidth > breakpoint.tablet) {
       return DeviceScreenType.Tablet;
     }
 
-    if(deviceWidth < breakpoint.watch) {
+    if (deviceWidth < breakpoint.watch) {
       return DeviceScreenType.Watch;
     }
   }
@@ -201,16 +256,17 @@ DeviceScreenType _getDeviceType(MediaQueryData mediaQuery, ScreenBreakpoints bre
     return DeviceScreenType.Desktop;
   }
 
-  if (deviceWidth > 600) {
+  if (deviceWidth >= 600) {
     return DeviceScreenType.Tablet;
+  }
+
+  if (deviceWidth > 300 && deviceWidth <= 320) {
+    return DeviceScreenType.SmallMobile;
   }
 
   if (deviceWidth < 300) {
     return DeviceScreenType.Watch;
   }
 
-  return DeviceScreenType.Mobile;   
+  return DeviceScreenType.Mobile;
 }
-
-
-
