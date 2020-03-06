@@ -142,6 +142,7 @@ class ScreenTypeLayout extends StatelessWidget {
   final bool resizeMargins;
   final ScreenBreakpoints breakpoints;
   final WidgetBuilder watch;
+  final WidgetBuilder smallMobile;
   final WidgetBuilder mobile;
   final WidgetBuilder tablet;
   final WidgetBuilder desktop;
@@ -150,11 +151,13 @@ class ScreenTypeLayout extends StatelessWidget {
       {Key key,
       this.breakpoints,
       Widget watch,
+      Widget smallMobile,
       Widget mobile,
       Widget tablet,
       Widget desktop,
       this.resizeMargins})
       : this.watch = _builderOrNull(watch),
+        this.smallMobile = _builderOrNull(smallMobile),
         this.mobile = _builderOrNull(mobile),
         this.tablet = _builderOrNull(tablet),
         this.desktop = _builderOrNull(desktop),
@@ -164,6 +167,7 @@ class ScreenTypeLayout extends StatelessWidget {
       {Key key,
       this.breakpoints,
       this.watch,
+      this.smallMobile,
       this.mobile,
       this.tablet,
       this.desktop,
@@ -193,6 +197,10 @@ class ScreenTypeLayout extends StatelessWidget {
         }
         if (sizingInformation.deviceScreenType == DeviceScreenType.Watch && watch != null) {
           return watch(context);
+        }
+        if (sizingInformation.deviceScreenType == DeviceScreenType.SmallMobile &&
+            smallMobile != null) {
+          return smallMobile(context);
         }
 
         // If none of the layouts above are supplied or we're on the mobile layout then we show the mobile layout
@@ -252,7 +260,7 @@ DeviceScreenType _getDeviceType(MediaQueryData mediaQuery, ScreenBreakpoints bre
   }
 
   // If no user defined definitions are passed through use the defaults
-  if (deviceWidth > 950) {
+  if (deviceWidth > 940) {
     return DeviceScreenType.Desktop;
   }
 
@@ -260,12 +268,12 @@ DeviceScreenType _getDeviceType(MediaQueryData mediaQuery, ScreenBreakpoints bre
     return DeviceScreenType.Tablet;
   }
 
-  if (deviceWidth > 300 && deviceWidth <= 320) {
-    return DeviceScreenType.SmallMobile;
-  }
-
   if (deviceWidth < 300) {
     return DeviceScreenType.Watch;
+  }
+
+  if (deviceWidth <= 320) {
+    return DeviceScreenType.SmallMobile;
   }
 
   return DeviceScreenType.Mobile;
