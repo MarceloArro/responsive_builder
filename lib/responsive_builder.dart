@@ -268,7 +268,7 @@ DeviceScreenType _getDeviceType(MediaQueryData mediaQuery, ScreenBreakpoints bre
     return DeviceScreenType.Tablet;
   }
 
-  if (deviceWidth < 300) {
+  if (deviceWidth < 270) {
     return DeviceScreenType.Watch;
   }
 
