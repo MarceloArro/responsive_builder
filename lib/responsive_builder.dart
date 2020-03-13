@@ -93,6 +93,7 @@ class SizingConfig {
   static double blockSizeVertical = 7.2;
   static double edgeMarginLayout = 16;
   static double marginBetweenComponents = 8;
+  static DeviceScreenType screenType = DeviceScreenType.Mobile;
 
   void init({@required double wight, @required double height}) {
     screenHeight = height;
@@ -105,27 +106,32 @@ class SizingConfig {
     if (deviceScreenType == DeviceScreenType.SmallMobile) {
       edgeMarginLayout = 8;
       marginBetweenComponents = 4;
+      screenType = deviceScreenType;
       return;
     }
 
     if (deviceScreenType == DeviceScreenType.Tablet) {
       edgeMarginLayout = 24;
       marginBetweenComponents = 16;
+      screenType = deviceScreenType;
       return;
     }
 
     if (deviceScreenType == DeviceScreenType.Desktop) {
       edgeMarginLayout = 32;
       marginBetweenComponents = 24;
+      screenType = deviceScreenType;
       return;
     }
     if (deviceScreenType == DeviceScreenType.Watch) {
       edgeMarginLayout = 4;
       marginBetweenComponents = 4;
+      screenType = deviceScreenType;
       return;
     }
     edgeMarginLayout = 16;
     marginBetweenComponents = 8;
+    screenType = deviceScreenType;
     return;
   }
 }
